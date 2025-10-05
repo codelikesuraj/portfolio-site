@@ -1,0 +1,52 @@
+---
+- name: Setup NGINX with Let's Encrypt (non-root user)
+  hosts: webservers
+  become: yes
+  vars_files:
+    - ./vars.yml
+  tasks:
+    - name: Install NGINX and Certbot
+      apt:
+        name:
+          - nginx
+          - python3-certbot-nginx
+        state: present
+        update_cache: yes
+    - name: Ensure web root exists
+      file:
+        path: "{{ web_root }}"
+        state: directory
+        owner: www-data
+        group: www-data
+        mode: "0755"
+    - name: Copy local web content to server
+      copy:
+        src: ./web-content/
+        dest: "{{ web_root }}"
+        owner: www-data
+        group: www-data
+        mode: "0644"
+      notify: Restart NGINX
+    - name: Ensure NGINX is running and enabled
+      service:
+        name: nginx
+        state: started
+        enabled: yes
+    - name: Obtain and install Let's Encrypt certificate
+      command: >
+        certbot --nginx
+        -d {{ domain_name }}
+        -d "www.{{ domain_name }}"
+        -m {{ email }}
+        --agree-tos
+        --force-renewal
+        --non-interactive
+        --redirect
+      args:
+        creates: /etc/letsencrypt/live/{{ domain_name }}/fullchain.pem
+      notify: Restart NGINX
+  handlers:
+    - name: Restart NGINX
+      service:
+        name: nginx
+        state: restarted

@@ -1,0 +1,12 @@
+---
+# Configuration variables for the website deployment
+# Copy this file to vars.yml and fill in your actual values
+
+domain_name: example.com
+web_root: /var/www/html
+email: your-email@example.com
+
+# Server configuration
+server_ip: 0.0.0.0
+ansible_user: your-username
+ansible_ssh_private_key_file: ~/.ssh/your_key
